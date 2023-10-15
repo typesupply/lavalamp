@@ -65,6 +65,10 @@ class LavaLampController(Subscriber, ezui.WindowController):
     debug = True
 
     def build(self):
+        self.previewBackgroundColor = (1, 1, 1, 1)
+        self.previewFillColor = (0, 0, 0, 1)
+        self.previewProblemBackgroundColor = (0.8, 0, 0, 1)
+
         content = """
         * MerzView @preview
         """
@@ -94,7 +98,7 @@ class LavaLampController(Subscriber, ezui.WindowController):
             position=("left", "bottom"),
             # borderColor=(1, 0, 0, 0.5),
             # borderWidth=10,
-            # backgroundColor=(1, 0, 0, 0.25)
+            backgroundColor=self.previewBackgroundColor
         )
         self.previewPathContainer = self.previewAnimator.appendBaseSublayer(
             # borderColor=(0, 0, 1, 0.5),
@@ -103,7 +107,7 @@ class LavaLampController(Subscriber, ezui.WindowController):
         )
         self.previewPathLayer = self.previewPathContainer.appendPathSublayer(
             position=("center", 0),
-            fillColor=(0, 0, 0, 1),
+            fillColor=self.previewFillColor,
             # backgroundColor=(0, 1, 0, 0.25),
             # borderWidth=20,
             # borderColor=(1, 0, 0, 0.5)
@@ -115,8 +119,8 @@ class LavaLampController(Subscriber, ezui.WindowController):
             ),
             pointSize=12,
             figureStyle="tabular",
-            fillColor=(0, 0, 0, 1),
-            backgroundColor=(1, 1, 1, 0.5),
+            fillColor=self.previewFillColor,
+            backgroundColor=self.previewBackgroundColor,
             cornerRadius=5,
             padding=(10, 5),
             opacity=0
@@ -179,8 +183,9 @@ class LavaLampController(Subscriber, ezui.WindowController):
         self.currentLocation = None
         self.nextLocations = []
         self.animating = False
-        self.setText("A")
+        self.setText("ABC")
         self.setMode("smooth", "normal")
+        self.populateColors()
 
     def started(self):
         self.w.open()
@@ -330,6 +335,7 @@ class LavaLampController(Subscriber, ezui.WindowController):
         height = 0
         xPosition = 0
         yPosition = 0
+        haveProblem = False
         if ds is None:
             self.previousLocations.clear()
             self.currentLocation = None
@@ -346,7 +352,9 @@ class LavaLampController(Subscriber, ezui.WindowController):
                 for glyphName in self.glyphNamesFromText:
                     pen = TransformPen(contentPen, (1, 0, 0, 1, width, 0))
                     glyph = ds.makeOneGlyph(glyphName, location)
-                    if glyph is not None:
+                    if glyph is None:
+                        haveProblem = True
+                    else:
                         glyph.draw(pen)
                         width += glyph.width
                     viewHeight = self.preview.height()
@@ -358,6 +366,10 @@ class LavaLampController(Subscriber, ezui.WindowController):
         with self.previewPathLayer.propertyGroup():
             self.previewPathLayer.setPath(path)
             self.previewPathLayer.setSize((width, height))
+        backgroundColor = self.previewBackgroundColor
+        if haveProblem:
+            backgroundColor = self.previewProblemBackgroundColor
+        self.previewAnimator.setBackgroundColor(backgroundColor)
         self.currentLocation = location
         self.updateLocationText(location)
 
@@ -449,6 +461,14 @@ class LavaLampController(Subscriber, ezui.WindowController):
         text = settings["text"]
         self.setText(text)
         self.setMode(mode, speed)
+
+    def populateColors(self):
+        self.previewAnimator.setBackgroundColor(self.previewBackgroundColor)
+        self.previewPathLayer.setFillColor(self.previewFillColor)
+        with self.previewLocationTextLayer.propertyGroup():
+            r, g, b, a = self.previewBackgroundColor
+            self.previewLocationTextLayer.setFillColor(self.previewFillColor)
+            self.previewLocationTextLayer.setBackgroundColor((r, g, b, 0.75))
 
     # Subscriber
     # ----------
