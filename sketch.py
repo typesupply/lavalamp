@@ -14,9 +14,9 @@ randomModeFrameDurations = dict(
     fast=0.5
 )
 smoothStepDistances = dict(
-    slow=1/100,
-    normal=1/50,
-    fast=1/20
+    slow=1/200,
+    normal=1/100,
+    fast=1/50
 )
 
 controlsFadeDuration = 0.3
@@ -56,6 +56,8 @@ controlSettingsImage = ezui.makeImage(
     symbolName="gearshape.fill",
     symbolConfiguration=smallSymbolConfiguration
 )
+
+storedLocationLimit = 5000
 
 
 class LavaLampController(Subscriber, ezui.WindowController):
@@ -173,11 +175,11 @@ class LavaLampController(Subscriber, ezui.WindowController):
         self.speed = None
         self.text = ""
         self.glyphNamesFromText = []
-        self.previousLocations = Queue()
+        self.previousLocations = []
         self.currentLocation = None
-        self.nextLocations = Queue()
+        self.nextLocations = []
         self.animating = False
-        self.setText("/?")
+        self.setText("A")
         self.setMode("smooth", "normal")
 
     def started(self):
@@ -279,6 +281,7 @@ class LavaLampController(Subscriber, ezui.WindowController):
             self._calculateSmoothSpaceEdges()
         self.previewAnimator.setFrameDuration(frameDuration)
         self._convertTextToGlyphNames()
+        self.goForwardOneLocation()
         if wasAnimating:
             self.startAnimating()
 
@@ -294,16 +297,15 @@ class LavaLampController(Subscriber, ezui.WindowController):
         self.playButton.setImage(controlPlayImage)
         self.previewAnimator.stopAnimation()
         self.previewLocationTextLayer.setOpacity(1.0)
-        self.goBackOneLocation()
 
     def goBackOneLocation(self):
         ds = CurrentDesignspace()
         location = None
         if ds is not None:
             if self.currentLocation is not None:
-                self.nextLocations.put(self.currentLocation)
+                self.nextLocations.append(self.currentLocation)
             if self.previousLocations:
-                location = self.previousLocations.get()
+                location = self.previousLocations.pop(-1)
         self.updatePathPreview(location)
 
     def goForwardOneLocation(self):
@@ -311,9 +313,11 @@ class LavaLampController(Subscriber, ezui.WindowController):
         location = None
         if ds is not None:
             if self.currentLocation is not None:
-                self.previousLocations.put(self.currentLocation)
+                self.previousLocations.append(self.currentLocation)
+                if len(self.previousLocations) > storedLocationLimit:
+                    self.previousLocations = self.previousLocations[-storedLocationLimit:]
             if self.nextLocations:
-                location = self.nextLocations.get()
+                location = self.nextLocations.pop(-1)
             else:
                 location = self.calculateNewLocation(ds)
         self.updatePathPreview(location)
@@ -483,7 +487,6 @@ class LavaLampController(Subscriber, ezui.WindowController):
         self.rebuildAnimationData()
 
 
-
 class SettingsPopUpController(ezui.WindowController):
 
     def build(self, parent, callback, settings):
@@ -564,30 +567,6 @@ class SettingsPopUpController(ezui.WindowController):
             text=text
         )
         self.callback(settings)
-
-
-class Queue:
-
-    def __init__(self, maxItems=300):
-        self.contents = []
-        self.maxItems = maxItems
-
-    def __repr__(self):
-        return repr(self.contents)
-
-    def clear(self):
-        self.contents = []
-
-    def put(self, item):
-        if len(self.contents) >= self.maxItems:
-            self.contents.pop(0)
-        self.contents.append(item)
-
-    def get(self):
-        return self.contents.pop(-1)
-
-    def __len__(self):
-        return len(self.contents)
 
 
 registerRoboFontSubscriber(LavaLampController)
