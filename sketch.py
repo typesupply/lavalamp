@@ -97,21 +97,12 @@ class LavaLampController(Subscriber, ezui.WindowController):
             delegate=self,
             frameDuration=1,
             position=("left", "bottom"),
-            # borderColor=(1, 0, 0, 0.5),
-            # borderWidth=10,
             backgroundColor=self.previewBackgroundColor
         )
-        self.previewPathContainer = self.previewAnimator.appendBaseSublayer(
-            # borderColor=(0, 0, 1, 0.5),
-            # borderWidth=8,
-            # backgroundColor=(1, 1, 0, 0.5)
-        )
+        self.previewPathContainer = self.previewAnimator.appendBaseSublayer()
         self.previewPathLayer = self.previewPathContainer.appendPathSublayer(
             position=("center", 0),
-            fillColor=self.previewFillColor,
-            # backgroundColor=(0, 1, 0, 0.25),
-            # borderWidth=20,
-            # borderColor=(1, 0, 0, 0.5)
+            fillColor=self.previewFillColor
         )
         self.previewLocationTextLayer = self.previewAnimator.appendTextLineSublayer(
             position=(
