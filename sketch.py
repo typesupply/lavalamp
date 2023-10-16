@@ -4,6 +4,7 @@ import ezui
 import merz
 from mojo.subscriber import Subscriber, registerRoboFontSubscriber
 from mojo.UI import splitText
+from mojo.UI import appearanceColorKey, getDefault
 from fontTools.pens.transformPen import TransformPen
 from fontParts.world import RGlyph
 from fontParts.base.base import interpolate
@@ -185,7 +186,7 @@ class LavaLampController(Subscriber, ezui.WindowController):
         self.animating = False
         self.setText("ABC")
         self.setMode("smooth", "normal")
-        self.populateColors()
+        self.loadColors()
 
     def started(self):
         self.w.open()
@@ -462,7 +463,9 @@ class LavaLampController(Subscriber, ezui.WindowController):
         self.setText(text)
         self.setMode(mode, speed)
 
-    def populateColors(self):
+    def loadColors(self):
+        self.previewFillColor = getDefault(appearanceColorKey("spaceCenterGlyphColor"))
+        self.previewBackgroundColor = getDefault(appearanceColorKey("spaceCenterBackgroundColor"))
         self.previewAnimator.setBackgroundColor(self.previewBackgroundColor)
         self.previewPathLayer.setFillColor(self.previewFillColor)
         with self.previewLocationTextLayer.propertyGroup():
@@ -472,6 +475,14 @@ class LavaLampController(Subscriber, ezui.WindowController):
 
     # Subscriber
     # ----------
+
+    def roboFontDidChangePreferences(self, info):
+        self.loadColors()
+        self.updatePathPreview(self.currentLocation)
+
+    def roboFontAppearanceChanged(self, info):
+        self.loadColors()
+        self.updatePathPreview(self.currentLocation)
 
     def roboFontDidSwitchCurrentGlyph(self, info):
         self._convertTextToGlyphNames()
